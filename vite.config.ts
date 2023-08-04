@@ -38,7 +38,7 @@ export default (configEnv: ConfigEnv): UserConfigExport => {
       proxy: {
         "/api/v1": {
           // target: "https://mock.mengxuegu.com/mock/63218b5fb4c53348ed2bc212/api/v1",
-          target: "https://www.fastmock.site/mock/761e2dda2b8890ab86c928a74e8f6538/api/v1",
+          target: "http://127.0.0.1:5000",
           ws: true,
           /** 是否允许跨域 */
           changeOrigin: true,
