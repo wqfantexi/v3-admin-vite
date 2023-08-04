@@ -34,7 +34,7 @@ export const constantRoutes: RouteRecordRaw[] = [
   },
   {
     path: "/login",
-    component: () => import("@/views/login/index.vue"),
+    component: () => import("@/views/user/login.vue"),
     meta: {
       hidden: true
     }
@@ -246,6 +246,15 @@ export const asyncRoutes: RouteRecordRaw[] = [
         name: "PagePermission",
         meta: {
           title: "页面权限",
+          roles: ["admin"] // 或者在子导航中设置角色
+        }
+      },
+      {
+        path: "user-manager",
+        component: () => import("@/views/user/manager.vue"),
+        name: "user-manager",
+        meta: {
+          title: "用户管理",
           roles: ["admin"] // 或者在子导航中设置角色
         }
       },

@@ -4,8 +4,8 @@ import { useRouter } from "vue-router"
 import { useUserStore } from "@/store/modules/user"
 import { type FormInstance, FormRules } from "element-plus"
 import { User, Lock, Key, Picture, Loading } from "@element-plus/icons-vue"
-import { getLoginCodeApi } from "@/api/login"
-import { type LoginRequestData } from "@/api/login/types/login"
+import { getLoginCodeApi } from "@/api/user/login"
+import { type LoginRequestData } from "@/api/user/login/types/login"
 import ThemeSwitch from "@/components/ThemeSwitch/index.vue"
 
 const router = useRouter()
