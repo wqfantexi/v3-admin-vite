@@ -1,8 +1,10 @@
 <script lang="ts" setup>
-import { h } from "vue";
+//import { h } from "vue";
 import { useTheme } from "@/hooks/useTheme";
-import { resetConfigLayout } from "@/utils";
+//import { resetConfigLayout } from "@/utils";
 import { ElNotification } from "element-plus";
+import { getGolbalMessageApi } from "@/api/notify";
+import { type GolbalMessage } from "@/api/notify/types/notify";
 // 将 Element Plus 的语言设置为中文
 import zhCn from "element-plus/es/locale/lang/zh-cn";
 
@@ -11,8 +13,25 @@ const { initTheme } = useTheme();
 /** 初始化主题 */
 initTheme();
 
+getGolbalMessageApi().then((res) => {
+    const historyMessage = (localStorage.getItem("global_message") || "").split(";");
+    res.data.list.forEach((item: GolbalMessage) => {
+        if (historyMessage.indexOf(item.id.toString()) >= 0) {
+            return;
+        }
+        historyMessage.push(item.id.toString());
+        ElNotification({
+            title: item.title,
+            type: item.type,
+            message: item.message,
+            duration: item.duration,
+            position: item.position
+        });
+    });
+    localStorage.setItem("global_message", historyMessage.join(";"));
+});
 /** 作者小心思 */
-ElNotification({
+/*ElNotification({
     title: "Hello",
     type: "success",
     message: h(
@@ -37,7 +56,7 @@ ElNotification({
     duration: 0,
     position: "bottom-right",
     offset: 150
-});
+});*/
 </script>
 
 <template>
