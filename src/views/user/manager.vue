@@ -290,3 +290,4 @@ watch([() => paginationData.currentPage, () => paginationData.pageSize], getTabl
     justify-content: flex-end;
 }
 </style>
+@/api/user/manager/types/manager

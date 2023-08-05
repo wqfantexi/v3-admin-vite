@@ -1,6 +1,6 @@
 import { request } from "@/utils/service";
 import { encryptPassword } from "../common";
-import type * as Table from "./types/table";
+import type * as Table from "./types/manager";
 
 /** 增 */
 export function createUserApi(data: Table.CreateUserRequest) {
