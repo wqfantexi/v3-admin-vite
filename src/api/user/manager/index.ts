@@ -1,37 +1,50 @@
-import { request } from "@/utils/service"
-import type * as Table from "./types/table"
+import { request } from "@/utils/service";
+import { encryptPassword } from "../common";
+import type * as Table from "./types/table";
 
 /** 增 */
-export function createTableDataApi(data: Table.CreateTableRequestData) {
-  return request({
-    url: "table",
-    method: "post",
-    data
-  })
+export function createUserApi(data: Table.CreateUserRequest) {
+    const data2 = Object.assign({}, data);
+    data2["password"] = encryptPassword(data["password"]);
+    console.log(data2);
+    return request({
+        url: "auth/create",
+        method: "post",
+        data: data2
+    });
 }
 
 /** 删 */
-export function deleteTableDataApi(id: string) {
-  return request({
-    url: `table/${id}`,
-    method: "delete"
-  })
+export function deleteUserApi(id: string) {
+    return request({
+        url: `auth/delete`,
+        method: "post",
+        data: { id }
+    });
 }
 
 /** 改 */
-export function updateTableDataApi(data: Table.UpdateTableRequestData) {
-  return request({
-    url: "table",
-    method: "put",
-    data
-  })
+export function updateUserApi(data: Table.UpdateUserRequest) {
+    return request({
+        url: "auth/update",
+        method: "post",
+        data
+    });
 }
 
 /** 查 */
-export function getTableDataApi(params: Table.GetTableRequestData) {
-  return request<Table.GetTableResponseData>({
-    url: "table",
-    method: "get",
-    params
-  })
+export function getUserApi(params: Table.GetUserRequest) {
+    return request<Table.GetUserResponseData>({
+        url: "auth/list",
+        method: "get",
+        params
+    });
+}
+
+/** 获取roles列表 */
+export function getUserRolesApi() {
+    return request<Table.GetRolesResponseData>({
+        url: "auth/roles",
+        method: "get"
+    });
 }
