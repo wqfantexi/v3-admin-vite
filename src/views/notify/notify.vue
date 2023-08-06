@@ -1,23 +1,28 @@
 <script lang="ts" setup>
 import { reactive, ref, watch } from "vue";
-import { createUserApi, deleteUserApi, updateUserApi, getUserApi, getUserRolesApi } from "@/api/user/manager";
-import { type GetUserData, type RoleData } from "@/api/user/manager/types/manager";
+import {
+    getGolbalMessageApi,
+    createGolbalMessageApi,
+    modifyGolbalMessageApi,
+    deleteGolbalMessageApi
+} from "@/api/notify";
+import { type GolbalMessage } from "@/api/notify/types/notify";
 import { type FormInstance, type FormRules, ElMessage, ElMessageBox } from "element-plus";
 import { Search, Refresh, CirclePlus, Delete, Download, RefreshRight } from "@element-plus/icons-vue";
 import { usePagination } from "@/hooks/usePagination";
-import { encryptPassword } from "@/api/user/common";
+
 defineOptions({
     // 命名当前组件
-    name: "user_manager"
+    name: "notify"
 });
 
 const loading = ref<boolean>(false);
 const { paginationData, handleCurrentChange, handleSizeChange } = usePagination();
 
 // 从后台获取所有的用户角色
-const listRoles = ref<RoleData[]>([]);
+const listRoles = ref<GolbalMessage[]>([]);
 const getAllRolesFromServer = () => {
-    getUserRolesApi()
+    getGolbalMessageApi()
         .then((res) => {
             listRoles.value = res.data.list;
         })
@@ -30,18 +35,17 @@ const getAllRolesFromServer = () => {
 const dialogVisible = ref<boolean>(false);
 const formRef = ref<FormInstance | null>(null);
 const formData = reactive({
-    username: "",
-    password: "",
-    email: "",
-    roles: Array<string>(),
-    status: true
+    title: "",
+    message: "",
+    position: "top-right",
+    type: "info",
+    duration: 0
 });
 const formRules: FormRules = reactive({
-    username: [{ required: true, trigger: "blur", message: "请输入用户名" }]
+    title: [{ required: true, trigger: "blur", message: "请输入标题" }]
     //password: [{ required: true, trigger: "blur", message: "请输入密码" }]
 });
 const handleOnClickCreate = () => {
-    getAllRolesFromServer();
     dialogVisible.value = true;
 };
 
@@ -49,7 +53,7 @@ const handleCreate = () => {
     formRef.value?.validate((valid: boolean, fields) => {
         if (valid) {
             if (currentUpdateId.value === undefined) {
-                createUserApi(formData)
+                createGolbalMessageApi(formData)
                     .then(() => {
                         ElMessage.success("新增成功");
                         getTableData();
@@ -58,16 +62,7 @@ const handleCreate = () => {
                         dialogVisible.value = false;
                     });
             } else {
-                const data = {
-                    id: currentUpdateId.value,
-                    username: formData.username,
-                    roles: formData.roles,
-                    status: formData.status,
-                    email: formData.email,
-                    password: formData.password.length > 0 ? encryptPassword(formData.password) : ""
-                };
-
-                updateUserApi(data)
+                modifyGolbalMessageApi(currentUpdateId.value, formData)
                     .then(() => {
                         ElMessage.success("修改成功");
                         getTableData();
@@ -83,21 +78,22 @@ const handleCreate = () => {
 };
 const resetForm = () => {
     currentUpdateId.value = undefined;
-    formData.username = "";
-    formData.password = "";
-    formData.email = "";
-    formData.status = true;
+    formData.title = "";
+    formData.message = "";
+    formData.duration = 0;
+    formData.position = "top-right";
+    formData.type = "info";
 };
 //#endregion
 
 //#region 删
-const handleDelete = (row: GetUserData) => {
-    ElMessageBox.confirm(`正在删除用户：${row.username}，确认删除？`, "提示", {
+const handleDelete = (row: GolbalMessage) => {
+    ElMessageBox.confirm(`正在删除消息：${row.title}，确认删除？`, "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning"
     }).then(() => {
-        deleteUserApi(row.id).then(() => {
+        deleteGolbalMessageApi(row.id).then(() => {
             ElMessage.success("删除成功");
             getTableData();
         });
@@ -106,20 +102,20 @@ const handleDelete = (row: GetUserData) => {
 //#endregion
 
 //#region 改
-const currentUpdateId = ref<undefined | string>(undefined);
-const handleUpdate = (row: GetUserData) => {
+const currentUpdateId = ref<undefined | number>(undefined);
+const handleUpdate = (row: GolbalMessage) => {
     getAllRolesFromServer();
     currentUpdateId.value = row.id;
-    formData.username = row.username;
-    formData.roles = row.roles;
-    formData.status = row.status;
-    formData.email = row.email;
+    formData.title = row.title;
+    formData.message = row.message;
+    formData.position = row.position;
+    formData.type = row.type;
     dialogVisible.value = true;
 };
 //#endregion
 
 //#region 查
-const tableData = ref<GetUserData[]>([]);
+const tableData = ref<GolbalMessage[]>([]);
 const searchFormRef = ref<FormInstance | null>(null);
 const searchData = reactive({
     username: "",
@@ -127,11 +123,9 @@ const searchData = reactive({
 });
 const getTableData = () => {
     loading.value = true;
-    getUserApi({
+    getGolbalMessageApi({
         currentPage: paginationData.currentPage,
-        size: paginationData.pageSize,
-        username: searchData.username || undefined,
-        email: searchData.email || undefined
+        size: paginationData.pageSize
     })
         .then((res) => {
             paginationData.total = res.data.total;
@@ -176,7 +170,7 @@ watch([() => paginationData.currentPage, () => paginationData.pageSize], getTabl
         <el-card v-loading="loading" shadow="never">
             <div class="toolbar-wrapper">
                 <div>
-                    <el-button type="primary" :icon="CirclePlus" @click="handleOnClickCreate">新增用户</el-button>
+                    <el-button type="primary" :icon="CirclePlus" @click="handleOnClickCreate">添加消息</el-button>
                     <el-button type="danger" :icon="Delete">批量删除</el-button>
                 </div>
                 <div>
@@ -191,20 +185,13 @@ watch([() => paginationData.currentPage, () => paginationData.pageSize], getTabl
             <div class="table-wrapper">
                 <el-table :data="tableData">
                     <el-table-column type="selection" width="50" align="center" />
-                    <el-table-column prop="username" label="用户名" align="center" />
-                    <el-table-column prop="roles" label="角色" align="center">
-                        <template #default="scope">
-                            <el-tag v-for="tag in scope.row.roles" :key="tag" effect="plain">{{ tag }}</el-tag>
-                        </template>
-                    </el-table-column>
-                    <el-table-column prop="email" label="邮箱" align="center" />
-                    <el-table-column prop="status" label="状态" align="center">
-                        <template #default="scope">
-                            <el-tag v-if="scope.row.status" type="success" effect="plain">启用</el-tag>
-                            <el-tag v-else type="danger" effect="plain">禁用</el-tag>
-                        </template>
-                    </el-table-column>
+                    <el-table-column prop="title" label="通知标题" align="center" />
+                    <el-table-column prop="message" label="通知内容" align="center" />
+                    <el-table-column prop="type" label="通知类型" align="center" />
+                    <el-table-column prop="position" label="弹出位置" align="center" />
+                    <el-table-column prop="duration" label="显示时间" align="center" />
                     <el-table-column prop="createTime" label="创建时间" align="center" />
+                    <el-table-column prop="updateTime" label="修改时间" align="center" />
                     <el-table-column fixed="right" label="操作" width="150" align="center">
                         <template #default="scope">
                             <el-button type="primary" text bg size="small" @click="handleUpdate(scope.row)"
@@ -233,30 +220,40 @@ watch([() => paginationData.currentPage, () => paginationData.pageSize], getTabl
         <!-- 新增/修改 -->
         <el-dialog
             v-model="dialogVisible"
-            :title="currentUpdateId === undefined ? '新增用户' : '修改用户'"
+            :title="currentUpdateId === undefined ? '新增通知' : '修改通知'"
             @close="resetForm"
             width="40%"
         >
             <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px" label-position="left">
-                <el-form-item prop="username" label="用户名">
-                    <el-input v-model="formData.username" placeholder="请输入" />
+                <el-form-item prop="title" label="通知标题">
+                    <el-input v-model="formData.title" placeholder="请输入" />
                 </el-form-item>
-                <el-form-item prop="password" label="密码">
-                    <el-input v-model="formData.password" type="password" show-password placeholder="请输入" />
-                </el-form-item>
-                <el-form-item prop="email" label="邮箱">
-                    <el-input v-model="formData.email" placeholder="请输入" />
-                </el-form-item>
-                <el-form-item prop="status" label="状态">
-                    <el-switch
-                        v-model="formData.status"
-                        style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
+                <el-form-item prop="message" label="通知内容">
+                    <el-input
+                        v-model="formData.message"
+                        type="textarea"
+                        :autosize="{ minRows: 4, maxRows: 10 }"
+                        placeholder="请输入"
                     />
                 </el-form-item>
-                <el-form-item prop="roles" label="角色">
-                    <el-select v-model="formData.roles" multiple placeholder="Select" style="width: 100%">
-                        <el-option v-for="item in listRoles" :key="item.id" :label="item.label" :value="item.value" />
+                <el-form-item prop="type" label="通知类型">
+                    <el-select v-model="formData.type" placeholder="Select">
+                        <el-option label="success" value="success" />
+                        <el-option label="warning" value="warning" />
+                        <el-option label="info" value="info" />
+                        <el-option label="error" value="error" />
                     </el-select>
+                </el-form-item>
+                <el-form-item prop="position" label="弹出位置">
+                    <el-select v-model="formData.position" placeholder="Select">
+                        <el-option label="top-right" value="top-right" />
+                        <el-option label="top-left" value="top-left" />
+                        <el-option label="bottom-right" value="bottom-right" />
+                        <el-option label="bottom-left" value="bottom-left" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item prop="duration" label="显示时间">
+                    <el-input v-model="formData.duration" placeholder="请输入" />
                 </el-form-item>
             </el-form>
             <template #footer>
